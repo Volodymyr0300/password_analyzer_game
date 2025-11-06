@@ -1,21 +1,22 @@
 use std::collections::HashMap;
 
-struct Rule<'a> {
-    description: &'a str,
-    check: Box<dyn Fn(&str) -> bool>
-}
-
 fn main() {
-    let input = String::from("Rust is fast and safe. Rust is empowering developers.");
+    let input = String::from("Rust is empowering developers and fast to learn.");
     let analyzer = TextAnalyzer::new(input);
 
-    println!("Word count: {}", analyzer.word_count());
-    println!("Unique words: {:?}", analyzer.unique_word_count());
-    println!("longest word: {:?}", analyzer.longest_word());
-    println!("Words longer than 3 letters: {:?}", analyzer.filter_words(|w| w.len() > 3) );
-    println!("Awerage word length: {:.2}", analyzer.awerage_word_length());
-    println!("Word frequencies: {:?}", analyzer.word_frequencies());
+    println!("Average word length: {:.2}", analyzer.average_word_length());
+
+    println!("\nIterating over words using our custom iterator:");
+    for word in analyzer.iter_words() {
+        println!("- {}", word);
+    }
+
+    println!("\nIterating over word pairs:");
+    for (w1, w2) in analyzer.word_pairs() {
+        println!("({w1}, {w2})");
+    }
 }
+
 struct TextAnalyzer {
     text: String,
     words: Vec<String>,
@@ -32,42 +33,66 @@ impl TextAnalyzer {
         TextAnalyzer { text, words }
     }
 
-    fn word_count(&self) -> usize {
-        self.words.len()
-    }
-
-    fn unique_word_count(&self) -> usize {
-        use std::collections::HashSet;
-        self.words.iter().collect::<HashSet<_>>().len()
-    }
-
-    fn longest_word(&self) -> Option<&String> {
-        self.words.iter().max_by_key(|w| w.len())
-    }
-
-    fn filter_words<F>(&self, condition: F) -> Vec<&String>
-    where
-        F: Fn(&String) -> bool,
-    {
-        self.words.iter().filter(|w| condition(w)).collect()
-    }
-
-    fn awerage_word_length(&self) -> f64 {
+    fn average_word_length(&self) -> f64 {
         let total_length: usize = self.words.iter().map(|w| w.len()).sum();
-        let count = self.words.len();
-
-        if count == 0 {
+        if self.words.is_empty() {
             0.0
         } else {
-            total_length as f64 / count as f64
+            total_length as f64 / self.words.len() as f64
         }
     }
 
-    fn word_frequencies(&self) -> HashMap<&String, usize> {
-        let mut freqs = HashMap::new();
-        self.words.iter().for_each(|w| {
-            *freqs.entry(w).or_insert(0) += 1;
-        });
-        freqs
+    fn iter_words(&self) -> WordIterator {
+        WordIterator {
+            words: &self.words,
+            index: 0,
+        }
+    }
+
+    fn word_pairs(&self) -> WordPairIterator {
+        WordPairIterator {
+            words: &self.words,
+            index: 0,
+        }
+    }
+}
+
+/// Custom iterator for single words
+struct WordIterator<'a> {
+    words: &'a [String],
+    index: usize,
+}
+
+impl<'a> Iterator for WordIterator<'a> {
+    type Item = &'a String;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < self.words.len() {
+            let result = &self.words[self.index];
+            self.index += 1;
+            Some(result)
+        } else {
+            None
+        }
+    }
+}
+
+/// Custom iterator for consecutive word pairs
+struct WordPairIterator<'a> {
+    words: &'a [String],
+    index: usize,
+}
+
+impl<'a> Iterator for WordPairIterator<'a> {
+    type Item = (&'a String, &'a String);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index + 1 < self.words.len() {
+            let pair = (&self.words[self.index], &self.words[self.index + 1]);
+            self.index += 1;
+            Some(pair)
+        } else {
+            None
+        }
     }
 }
