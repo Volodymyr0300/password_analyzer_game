@@ -6,9 +6,9 @@ fn main() {
 
     println!("--- Function Word Analysis ---");
 
-    let short_words: Vec<_> = analyzer
-        .iter_words()
-        .filter(|word| word.len() < 4)
+    let short_words: Vec<_> = analyzer 
+        .iter_words() 
+        .filter(|word| word.len() < 4) 
         .collect();
 
     println!("Short words (<4 letters): {:?}", short_words);
